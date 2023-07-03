@@ -12,28 +12,31 @@ pub struct Module<const N: usize> {
 }
 
 impl<const N: usize> Module<N> {
-    fn process(&mut self, graph: &mut Graph<N>, sr: f32) {
-        let mut inputs = vec![];
+    // fn process(&mut self, graph: &mut Graph<N>, sr: f32) {
+    //     let mut inputs = vec![];
+    //
+    //     for (_, input) in &self.inputs {
+    //         if let Some(input_id) = graph.connections.get(*input) {
+    //             println!("here");
+    //             inputs.push(graph.outputs[*input_id])
+    //         } else {
+    //             let a = [graph.inputs[*input]; N];
+    //             println!("{:?}", a);
+    //             inputs.push(a)
+    //         }
+    //     }
+    //
+    //     let mut outputs = vec![[0.0; N]; self.processor.n_outputs()];
+    //
+    //     self.processor.process(&inputs, &mut outputs, sr);
+    //
+    //     for ((_, output), data) in self.outputs.iter().zip(outputs) {
+    //         graph.outputs[*output] = data
+    //     }
+    // }
 
-        for (_, input) in &self.inputs {
-            if let Some(input_id) = graph.connections.get(*input) {
-                inputs.push(graph.outputs[*input_id])
-            } else {
-                inputs.push([graph.inputs[*input]; N])
-            }
-        }
-
-        let mut outputs = vec![[0.0; N]; self.processor.n_outputs()];
-
-        self.processor.process(&inputs, &mut outputs, sr);
-
-        for ((_, output), data) in self.outputs.iter().zip(outputs) {
-            graph.outputs[*output] = data
-        }
-    }
-
-    fn new(
-        processor: impl AudioProcessor<N>,
+    pub fn new(
+        processor: impl AudioProcessor<N> + 'static,
         inputs: Vec<(String, f32)>,
         outputs: Vec<String>,
         graph: &mut Graph<N>,
@@ -55,14 +58,14 @@ impl<const N: usize> Module<N> {
         r
     }
 
-    fn input_id(&self, idx: usize) -> Option<ModuleInputId> {
+    pub fn input_id(&self, idx: usize) -> Option<ModuleInputId> {
         if let Some((_, id)) = self.inputs.get(idx) {
             Some(id.clone())
         } else {
             None
         }
     }
-    fn output_id(&self, idx: usize) -> Option<ModuleOutputId> {
+    pub fn output_id(&self, idx: usize) -> Option<ModuleOutputId> {
         if let Some((_, id)) = self.outputs.get(idx) {
             Some(*id)
         } else {
@@ -126,11 +129,9 @@ impl<const N: usize> Graph<N> {
                 }
             }
 
-            println!("{:?}", inputs);
-
             let mut outputs = vec![[0.0; N]; node.processor().n_outputs()];
 
-            node.processor_mut().process(&inputs, &mut outputs, sr);
+            node.processor.process(&inputs, &mut outputs, sr);
 
             for ((_, output), data) in node.outputs.iter().zip(outputs) {
                 self.outputs[*output] = data
